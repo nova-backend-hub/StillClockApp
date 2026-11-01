@@ -15,13 +15,8 @@ jobs:
 
     - name: Set up Xcode
       run: |
-        if [ -d "/Applications/Xcode_16.2.app" ]; then
-          sudo xcode-select -s /Applications/Xcode_16.2.app
-        elif [ -d "/Applications/Xcode_16.1.app" ]; then
-          sudo xcode-select -s /Applications/Xcode_16.1.app
-        elif [ -d "/Applications/Xcode_16.0.app" ]; then
-          sudo xcode-select -s /Applications/Xcode_16.0.app
-        fi
+        sudo xcodebuild -runFirstLaunch
+        xcrun simctl list runtimes
         xcodebuild -version
 
     - name: Build Project
@@ -33,7 +28,9 @@ jobs:
                    -derivedDataPath build \
                    CODE_SIGN_IDENTITY="" \
                    CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGNING_ALLOWED=NO
+                   CODE_SIGNING_ALLOWED=NO \
+                   ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
+                   ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
 
     - name: Package into IPA
       run: |
