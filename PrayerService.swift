@@ -190,8 +190,8 @@ public final class PrayerService: ObservableObject {
                 self.nextPrayerCountdownText = String(format: "%02dm %02ds", minutes, seconds)
             }
             
-            // If within 10 minutes before athan (0 <= remaining <= 600s)
-            if remaining <= (10 * 60) {
+            // If within 25 minutes before athan (0 <= remaining <= 1500s)
+            if remaining <= (25 * 60) {
                 self.alertMode = .imminent(prayer: next.name, secondsRemaining: remaining)
                 return
             }
@@ -200,7 +200,7 @@ public final class PrayerService: ObservableObject {
             self.nextPrayerCountdownText = "Calculating..."
         }
         
-        // If not within 10 minutes before next prayer, check if within 30 minutes after last prayer
+        // If not within 25 minutes before next prayer, check if within 30 minutes after last prayer
         if let recent = recentPassedPrayer {
             self.alertMode = .elapsed(prayer: recent.name, secondsPassed: recent.diff)
             return

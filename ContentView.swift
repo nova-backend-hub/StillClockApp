@@ -241,7 +241,7 @@ struct ContentView: View {
                 )
                 
             case .imminent(let prayer, let secondsRemaining):
-                // Within 10 minutes before athan
+                // Within 25 minutes before athan
                 let mins = Int(secondsRemaining) / 60
                 let secs = Int(secondsRemaining) % 60
                 
@@ -251,7 +251,7 @@ struct ContentView: View {
                             .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.15))
                             .font(.system(size: 16, weight: .bold))
                         
-                        Text("ATHAN IMMINENT // -10 MIN COUNTDOWN")
+                        Text("ATHAN IMMINENT // -25 MIN COUNTDOWN")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.15))
                         
@@ -276,7 +276,7 @@ struct ContentView: View {
                             .foregroundColor(Color(red: 1.0, green: 0.85, blue: 0.6))
                     }
                     
-                    Text("Countdown active down until 0 for impending prayer")
+                    Text("Impending athan countdown active up to 25 minutes")
                         .font(.system(size: 11, weight: .regular, design: .monospaced))
                         .foregroundColor(Color.gray.opacity(0.8))
                 }
@@ -452,23 +452,45 @@ struct ContentView: View {
                 if isPast {
                     let diff = currentDate.timeIntervalSince(item.date)
                     let mins = Int(diff) / 60
-                    if mins < 60 {
+                    let secs = Int(diff) % 60
+                    if diff <= (30 * 60) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(Color(red: 0.2, green: 0.9, blue: 0.5))
+                            Text(String(format: "+ %02dm %02ds elapsed", mins, secs))
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(Color(red: 0.2, green: 0.9, blue: 0.5))
+                        }
+                    } else if mins < 60 {
                         Text("+ \(mins)m since athan")
                             .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                            .foregroundColor(Color.gray.opacity(0.7))
                     } else {
-                        Text("Today · Asia/Amman")
+                        Text("Passed · Asia/Amman")
                             .font(.system(size: 10, weight: .regular, design: .monospaced))
-                            .foregroundColor(Color.gray.opacity(0.6))
+                            .foregroundColor(Color.gray.opacity(0.5))
                     }
                 } else {
                     let remaining = item.date.timeIntervalSince(currentDate)
                     let hrs = Int(remaining) / 3600
                     let mins = (Int(remaining) % 3600) / 60
-                    let timeText = hrs > 0 ? "In \(hrs)h \(mins)m" : "In \(mins)m"
-                    Text(timeText)
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundColor(isNext ? Color(red: 0.4, green: 0.75, blue: 0.95) : Color.gray.opacity(0.6))
+                    let secs = Int(remaining) % 60
+                    if remaining <= (25 * 60) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "bell.badge.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.15))
+                            Text(String(format: "- %02dm %02ds remaining", mins, secs))
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(Color(red: 1.0, green: 0.65, blue: 0.15))
+                        }
+                    } else {
+                        let timeText = hrs > 0 ? "In \(hrs)h \(mins)m" : "In \(mins)m"
+                        Text(timeText)
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(isNext ? Color(red: 0.4, green: 0.75, blue: 0.95) : Color.gray.opacity(0.6))
+                    }
                 }
             }
             

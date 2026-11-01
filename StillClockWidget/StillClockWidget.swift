@@ -137,7 +137,7 @@ struct StillClockProvider: TimelineProvider {
         let nextName = next?.name ?? "Fajr"
         if let next = next {
             let rem = next.date.timeIntervalSince(date)
-            if alertState == nil && rem <= (10 * 60) {
+            if alertState == nil && rem <= (25 * 60) {
                 let mins = Int(rem) / 60
                 alertState = .imminent(prayer: next.name, mins: mins)
             } else if alertState == nil {
@@ -294,7 +294,7 @@ struct StillClockWidgetEntryView: View {
                         Image(systemName: "bell.badge.fill")
                             .foregroundColor(Color.orange)
                             .font(.system(size: 11))
-                        Text("ATHAN IMMINENT (-10m)")
+                        Text("ATHAN IMMINENT (-25m)")
                             .font(.system(size: 9, weight: .bold, design: .monospaced))
                             .foregroundColor(Color.orange)
                     }
