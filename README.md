@@ -37,3 +37,4 @@ A minimalist clock, Jordan prayer times, and 3-day weather dashboard designed fo
    ```
 3. GitHub Actions will trigger automatically under the **Actions** tab.
 4. Once completed, download `StillClock-ipa` from Artifacts, extract `StillClock.ipa`, and sideload it to your iPhone using Sideloadly or AeroLoad!
+
