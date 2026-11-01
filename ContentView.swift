@@ -291,22 +291,46 @@ struct ContentView: View {
                 )
                 
             case .standard(let prayer, _):
-                HStack {
-                    HStack(spacing: 8) {
-                        Image(systemName: "clock.arrow.2.circlepath")
-                            .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
-                            .font(.system(size: 14))
+                VStack(alignment: .leading, spacing: 10) {
+                    if !prayerService.lastPassedPrayerName.isEmpty {
+                        HStack {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(Color(red: 0.25, green: 0.85, blue: 0.55))
+                                    .font(.system(size: 13))
+                                Text("PASSED / \(prayerService.lastPassedPrayerName.uppercased())")
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                    .foregroundColor(Color(red: 0.8, green: 0.9, blue: 0.85))
+                            }
+                            
+                            Spacer()
+                            
+                            Text("+\(prayerService.lastPassedElapsedText) ELAPSED")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(Color(red: 0.25, green: 0.85, blue: 0.55))
+                        }
                         
-                        Text("NEXT / \(prayer.uppercased())")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
+                        Divider()
+                            .background(Color.white.opacity(0.1))
                     }
                     
-                    Spacer()
-                    
-                    Text("IN \(prayerService.nextPrayerCountdownText)")
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                    HStack {
+                        HStack(spacing: 6) {
+                            Image(systemName: "clock.arrow.2.circlepath")
+                                .foregroundColor(Color(red: 0.4, green: 0.75, blue: 0.95))
+                                .font(.system(size: 13))
+                            
+                            Text("NEXT / \(prayer.uppercased())")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("IN \(prayerService.nextPrayerCountdownText)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundColor(Color(red: 0.4, green: 0.75, blue: 0.95))
+                    }
                 }
                 .padding(14)
                 .background(
@@ -314,7 +338,7 @@ struct ContentView: View {
                         .fill(Color(red: 0.08, green: 0.1, blue: 0.15))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
                         )
                 )
                 
@@ -462,14 +486,13 @@ struct ContentView: View {
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                                 .foregroundColor(Color(red: 0.2, green: 0.9, blue: 0.5))
                         }
-                    } else if mins < 60 {
-                        Text("+ \(mins)m since athan")
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .foregroundColor(Color.gray.opacity(0.7))
                     } else {
-                        Text("Passed · Asia/Amman")
-                            .font(.system(size: 10, weight: .regular, design: .monospaced))
-                            .foregroundColor(Color.gray.opacity(0.5))
+                        let hrs = Int(diff) / 3600
+                        let remMins = (Int(diff) % 3600) / 60
+                        let text = hrs > 0 ? "+ \(hrs)h \(remMins)m elapsed" : "+ \(remMins)m elapsed"
+                        Text(text)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundColor(Color(red: 0.35, green: 0.75, blue: 0.55))
                     }
                 } else {
                     let remaining = item.date.timeIntervalSince(currentDate)

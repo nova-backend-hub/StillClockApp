@@ -7,6 +7,8 @@ public final class PrayerService: ObservableObject {
     @Published public var alertMode: AthanAlertMode = .none
     @Published public var nextPrayerName: String = ""
     @Published public var nextPrayerCountdownText: String = ""
+    @Published public var lastPassedPrayerName: String = ""
+    @Published public var lastPassedElapsedText: String = ""
     @Published public var isOfflineCached: Bool = false
     @Published public var lastFetchTime: Date?
     
@@ -22,7 +24,44 @@ public final class PrayerService: ObservableObject {
     private var allUpcomingPrayers: [(name: String, arabic: String, date: Date)] = []
     private var todayPrayers: [(name: String, arabic: String, date: Date)] = []
     
-    public init() {}
+    public init() {
+        populateOfflineDefaults()
+    }
+    
+    private func populateOfflineDefaults() {
+        guard let ammanTZ = TimeZone(identifier: "Asia/Amman") else { return }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = ammanTZ
+        let now = Date()
+        
+        let defaults: [String: (Int, Int)] = [
+            "Fajr": (5, 30),
+            "Dhuhr": (12, 20),
+            "Asr": (15, 25),
+            "Maghrib": (17, 52),
+            "Isha": (19, 9)
+        ]
+        
+        var todayMap: [String: String] = [:]
+        var tomMap: [String: String] = [:]
+        let iso = ISO8601DateFormatter()
+        
+        for (name, hm) in defaults {
+            var comp = cal.dateComponents([.year, .month, .day], from: now)
+            comp.hour = hm.0
+            comp.minute = hm.1
+            comp.second = 0
+            comp.timeZone = ammanTZ
+            if let d = cal.date(from: comp) {
+                todayMap[name] = iso.string(from: d)
+            }
+            if let tom = cal.date(byAdding: .day, value: 1, to: cal.date(from: comp) ?? now) {
+                tomMap[name] = iso.string(from: tom)
+            }
+        }
+        
+        self.processTimings(city: JordanCity.allCities[0], todayStr: "default", timingsToday: todayMap, timingsTomorrow: tomMap)
+    }
     
     public func fetchPrayers(city: JordanCity) {
         let calendar = Calendar(identifier: .gregorian)
@@ -44,9 +83,12 @@ public final class PrayerService: ObservableObject {
         fetchSingleDay(city: city, dateStr: todayStr) { [weak self] timingsToday in
             guard let self = self, let timingsToday = timingsToday else { return }
             
-            // Fetch Tomorrow for seamless transitions around midnight
+            // Immediately process Today so UI is instant
+            self.processTimings(city: city, todayStr: todayStr, timingsToday: timingsToday, timingsTomorrow: nil)
+            
+            // Then fetch Tomorrow for midnight continuity
             self.fetchSingleDay(city: city, dateStr: tomorrowStr) { [weak self] timingsTomorrow in
-                guard let self = self else { return }
+                guard let self = self, let timingsTomorrow = timingsTomorrow else { return }
                 self.processTimings(city: city, todayStr: todayStr, timingsToday: timingsToday, timingsTomorrow: timingsTomorrow)
             }
         }
@@ -160,15 +202,28 @@ public final class PrayerService: ObservableObject {
     public func tick() {
         let now = Date()
         
-        // 1. Check for athan elapsed within last 30 minutes (0 <= now - athanDate <= 1800s)
-        var recentPassedPrayer: (name: String, diff: TimeInterval)? = nil
-        for prayer in todayPrayers {
-            let diff = now.timeIntervalSince(prayer.date)
-            if diff >= 0 && diff <= (30 * 60) {
-                // If multiple somehow (or latest), pick the one closest to now
-                if recentPassedPrayer == nil || diff < recentPassedPrayer!.diff {
-                    recentPassedPrayer = (prayer.name, diff)
-                }
+        // 1. Identify the most recent passed prayer for continuous elapsed timer
+        var lastPassed: (name: String, diff: TimeInterval)? = nil
+        var recentPassed30m: (name: String, diff: TimeInterval)? = nil
+        
+        let passedPrayers = todayPrayers.filter { now >= $0.date }.sorted { $0.date > $1.date }
+        if let latest = passedPrayers.first {
+            let diff = now.timeIntervalSince(latest.date)
+            lastPassed = (latest.name, diff)
+            if diff <= (30 * 60) {
+                recentPassed30m = (latest.name, diff)
+            }
+        }
+        
+        if let lp = lastPassed {
+            self.lastPassedPrayerName = lp.name
+            let h = Int(lp.diff) / 3600
+            let m = (Int(lp.diff) % 3600) / 60
+            let s = Int(lp.diff) % 60
+            if h > 0 {
+                self.lastPassedElapsedText = String(format: "%dh %02dm %02ds", h, m, s)
+            } else {
+                self.lastPassedElapsedText = String(format: "%02dm %02ds", m, s)
             }
         }
         
@@ -200,13 +255,13 @@ public final class PrayerService: ObservableObject {
             self.nextPrayerCountdownText = "Calculating..."
         }
         
-        // If not within 25 minutes before next prayer, check if within 30 minutes after last prayer
-        if let recent = recentPassedPrayer {
+        // If within 30 minutes after last prayer, show dynamic elapsed alert
+        if let recent = recentPassed30m {
             self.alertMode = .elapsed(prayer: recent.name, secondsPassed: recent.diff)
             return
         }
         
-        // Standard countdown
+        // Standard countdown & elapsed state (always shows both elapsed and countdown)
         if let next = nextPrayer {
             let remaining = next.date.timeIntervalSince(now)
             self.alertMode = .standard(prayer: next.name, secondsRemaining: remaining)

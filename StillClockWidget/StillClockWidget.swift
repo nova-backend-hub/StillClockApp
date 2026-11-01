@@ -166,24 +166,37 @@ struct StillClockProvider: TimelineProvider {
     }
 }
 
+// MARK: - Widget Background Compatibility Helper
+extension View {
+    @ViewBuilder
+    func widgetBackground(_ color: Color) -> some View {
+        if #available(iOS 17.0, *) {
+            self.containerBackground(color, for: .widget)
+        } else {
+            self.background(color)
+        }
+    }
+}
+
 // MARK: - Widget Views
 struct StillClockWidgetEntryView: View {
     var entry: StillClockProvider.Entry
     @Environment(\.widgetFamily) var family
 
     var body: some View {
-        ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.07)
-                .ignoresSafeArea()
-            
-            switch family {
-            case .systemSmall:
-                smallView
-            case .systemMedium:
-                mediumView
-            default:
-                largeView
-            }
+        widgetContent
+            .widgetBackground(Color(red: 0.05, green: 0.05, blue: 0.07))
+    }
+
+    @ViewBuilder
+    private var widgetContent: some View {
+        switch family {
+        case .systemSmall:
+            smallView
+        case .systemMedium:
+            mediumView
+        default:
+            largeView
         }
     }
     
@@ -441,5 +454,6 @@ struct StillClockWidget: Widget {
         .configurationDisplayName("Still / Clock")
         .description("Jordan prayer times, dynamic athan alerts, and 3-day weather.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .contentMarginsDisabled()
     }
 }
