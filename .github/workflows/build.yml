@@ -1,0 +1,42 @@
+name: Build StillClock IPA
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+    - name: Build Project
+      run: |
+        xcodebuild -project StillClock.xcodeproj \
+                   -scheme StillClock \
+                   -configuration Release \
+                   -sdk iphoneos \
+                   -derivedDataPath build \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGNING_ALLOWED=NO
+
+    - name: Package into IPA
+      run: |
+        mkdir -p Payload
+        cp -r build/Build/Products/Release-iphoneos/StillClock.app Payload/
+        zip -r "StillClock.ipa" Payload
+        rm -rf Payload
+
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: StillClock-ipa
+        path: StillClock.ipa
+        retention-days: 14
